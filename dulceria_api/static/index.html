@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Inventario - Dulcería</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -31,9 +32,20 @@
       </div>
     </section>
 
-    <!-- Formulario para agregar dulce -->
+    <!-- Formulario + Carga Masiva Excel -->
     <section class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
-      <h2 class="text-lg font-semibold mb-4 text-slate-700">Agregar Nuevo Dulce</h2>
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-700">Agregar Nuevo Dulce</h2>
+        
+        <div class="flex items-center gap-2">
+          <input type="file" id="input-excel" accept=".xlsx,.xlsm" style="display: none;" onchange="subirExcel(event)" />
+          <button type="button" onclick="document.getElementById('input-excel').click()"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded shadow-sm transition cursor-pointer">
+            📊 Cargar desde Excel (.xlsx)
+          </button>
+        </div>
+      </div>
+
       <form id="form-dulce" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <input type="text" id="nombre" placeholder="Nombre (ej. Gomitas)" required
           class="border rounded px-3 py-2 text-sm focus:outline-pink-500" />
@@ -59,25 +71,38 @@
           class="border rounded px-3 py-2 text-sm focus:outline-pink-500" />
 
         <button type="submit"
-          class="sm:col-span-2 md:col-span-4 bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 rounded transition">
+          class="sm:col-span-2 md:col-span-4 bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 rounded transition cursor-pointer">
           + Guardar en Inventario
         </button>
       </form>
     </section>
 
-    <!-- Tabla de Inventario -->
+    <!-- Tabla de Inventario + Descarga de Reportes Excel y PDF -->
     <section class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+      <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
         <h2 class="text-lg font-semibold text-slate-700">Productos en Existencia</h2>
-        <select id="filtro-categoria" onchange="cargarDatos()"
-          class="border rounded px-3 py-1.5 text-sm bg-slate-50">
-          <option value="">Todas las categorías</option>
-          <option value="Gomitas">Gomitas</option>
-          <option value="Chocolates">Chocolates</option>
-          <option value="Caramelos">Caramelos</option>
-          <option value="Chicles">Chicles</option>
-          <option value="Botanas">Botanas</option>
-        </select>
+        
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="filtro-categoria" onchange="cargarDatos()"
+            class="border rounded px-3 py-1.5 text-sm bg-slate-50">
+            <option value="">Todas las categorías</option>
+            <option value="Gomitas">Gomitas</option>
+            <option value="Chocolates">Chocolates</option>
+            <option value="Caramelos">Caramelos</option>
+            <option value="Chicles">Chicles</option>
+            <option value="Botanas">Botanas</option>
+          </select>
+
+          <button type="button" onclick="descargarReporte('excel')"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded shadow-sm transition cursor-pointer">
+            📗 Reporte Excel
+          </button>
+
+          <button type="button" onclick="descargarReporte('pdf')"
+            class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded shadow-sm transition cursor-pointer">
+            📕 Reporte PDF
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -116,6 +141,13 @@
       renderAlertas(alertas);
     }
 
+    function descargarReporte(formato) {
+      const cat = document.getElementById("filtro-categoria").value;
+      const base = formato === "pdf" ? "/dulces/exportar-pdf/" : "/dulces/exportar-excel/";
+      const url = cat ? `${base}?categoria=${encodeURIComponent(cat)}` : base;
+      window.location.href = url;
+    }
+
     function renderTabla(dulces) {
       const tbody = document.getElementById("tabla-dulces");
       if (dulces.length === 0) {
@@ -146,11 +178,11 @@
             </td>
             <td class="py-3 px-4 text-right space-x-1">
               <button onclick="moverStock(${d.id}, -1)" title="Vender 1"
-                class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-2.5 py-1 rounded">-1</button>
+                class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-2.5 py-1 rounded cursor-pointer">-1</button>
               <button onclick="moverStock(${d.id}, 1)" title="Surtir 1"
-                class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold px-2.5 py-1 rounded">+1</button>
+                class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold px-2.5 py-1 rounded cursor-pointer">+1</button>
               <button onclick="eliminarDulce(${d.id})" title="Eliminar"
-                class="text-slate-400 hover:text-red-600 px-2 py-1">🗑️</button>
+                class="text-slate-400 hover:text-red-600 px-2 py-1 cursor-pointer">🗑️</button>
             </td>
           </tr>
         `;
@@ -206,6 +238,38 @@
       }
     });
 
+    async function subirExcel(event) {
+      const archivo = event.target.files[0];
+      if (!archivo) return;
+
+      const formData = new FormData();
+      formData.append("archivo", archivo);
+
+      try {
+        const res = await fetch("/dulces/importar-excel/", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          let aviso = data.mensaje;
+          if (data.errores && data.errores.length > 0) {
+            aviso += "\n\nAdvertencias:\n" + data.errores.join("\n");
+          }
+          alert(aviso);
+          cargarDatos();
+        } else {
+          alert(data.detail || "Error al procesar el archivo Excel.");
+        }
+      } catch (err) {
+        alert("Error de conexión al subir el archivo.");
+      } finally {
+        event.target.value = "";
+      }
+    }
+
     async function moverStock(id, cantidad) {
       const res = await fetch(`/dulces/${id}/movimiento?cantidad=${cantidad}`, { method: "POST" });
       if (!res.ok) {
@@ -221,7 +285,6 @@
       cargarDatos();
     }
 
-    // Cargar inventario al abrir la página
     cargarDatos();
   </script>
 </body>
